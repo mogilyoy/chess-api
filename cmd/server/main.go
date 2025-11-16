@@ -4,8 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/mogilyoy/chess-api/internal/api"
 )
 
@@ -14,16 +12,20 @@ func main() {
 	serverImpl := &api.Server{}
 
 	// Создаём роутер chi
-	r := chi.NewRouter()
+	// r := chi.NewRouter()
 
 	// Регистрируем сгенерированные хэндлеры
-	api.HandlerWithOptions(serverImpl, api.ChiServerOptions{
+	apiHandler := api.HandlerWithOptions(serverImpl, api.ChiServerOptions{
 		BaseURL: "",
 	})
 
+	mux := http.NewServeMux()
+	mux.Handle("/openapi.yaml", http.FileServer(http.Dir("./api")))
+	mux.Handle("/", apiHandler)
+
 	addr := ":8080"
 	log.Printf("Starting server on %s", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
 }
