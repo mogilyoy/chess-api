@@ -1,0 +1,912 @@
+openapi: 3.1.1
+
+info:
+  title: Chess website API
+  description: API Specification for Chess website
+  version: 0.0.1
+  license: 
+    name: Apache 2.0
+    identifier: Apache-2.0
+    
+
+
+servers:
+  - url: https://development.chessie.com/v1
+    description: Development server
+
+  - url: https://staging.chessie.com/v1
+    description: Staging server
+
+  - url: https://api.chessie.com/v1
+    description: Production server
+
+
+
+#GAME 
+paths: 
+  /game/new:
+    post:
+      tags: 
+        - game
+      summary: Create a new game
+      operationId: GameCreate
+
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/NewGameRequest"
+        
+      responses:
+        "201":
+          description: Created
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+ 
+  /game/{id}:
+    get: 
+      tags: 
+        - game
+      summary: Get game info
+      operationId: GameGet
+      
+      parameters: 
+        - name: id
+          in: path
+          required: true
+          schema: 
+            $ref: "#/components/schemas/ULID"
+
+        - $ref: "#/components/parameters/XRequestID"
+      
+      responses: 
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/Game"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      
+  /game/move:
+    post: 
+      tags: 
+        -  game
+      summary: Make a move 
+      operationId: MoveCreate
+
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/MoveRequest"
+      
+      responses:
+        "201":
+          description: Created
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoveHistory"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+          
+  /game/{gameId}/moves:
+    get: 
+      tags: 
+        - game
+      summary: Get All game Moves
+      operationId: MoveList
+
+      parameters: 
+        - name: gameId
+          in: path
+          required: true
+          schema: 
+            $ref: "#/components/schemas/ULID"
+
+        - $ref: "#/components/parameters/XRequestID"
+      
+      responses: 
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/MoveHistory"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      
+  /game/resign:
+    post: 
+      tags:
+        - game
+      summary: Resign in a chess game
+      operationId: Resign
+
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/ResignGameRequest"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+           
+  /game/draw:
+    post: 
+      tags:
+        - game
+      summary: Offer, accept or decline a draw
+      operationId: Draw
+      
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/DrawGameRequest"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /game/end:
+    post: 
+      tags: 
+        - game
+      summary: End the game
+      operationId: GameFinish
+      
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/EndGameRequest"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /users/me/games:
+    get: 
+      tags: 
+        - game
+        - users
+      summary: Get user active games
+      operationId: GamesList
+      
+      parameters: 
+        - name: status
+          in: query
+          required: false
+          schema: 
+            type: string
+            enum: ['active', 'finished']
+            x-enum-varnames: [ACTIVE, FINISHED]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          required: false
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          required: false
+
+        - $ref: "#/components/parameters/XRequestID"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameHistory"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+      
+# BOARD
+  /board:
+    get:
+      tags: 
+        - board
+      summary: Get board state
+      operationId: BoardGetState
+      
+      parameters:
+        - name: gameId
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ULID"
+        - name: moveCount
+          in: query
+          required: false
+          schema:
+            type: integer
+
+        - $ref: "#/components/parameters/XRequestID"
+
+      responses: 
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/Board"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /board/move/validate:
+    post: 
+      tags: 
+        - board           
+      summary: Check if move is legal
+      operationId: MoveValidate
+
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/MoveRequest"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        
+  /board/legal-moves:
+    get: 
+      tags: 
+        - board
+      summary: Get piece legal moves
+      operationId: GetLegalMoves
+
+      parameters: 
+        - name: pieceAddress
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "e2"
+
+        - $ref: "#/components/parameters/XRequestID"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalMovesList"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden" 
+        
+  /board/score:
+    post: 
+      tags: 
+        - board
+        - game
+      summary: Get AI score of the board state
+      operationId: ScoreGet
+
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScoreRequest"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScoreResponse"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+               
+  /user/register:
+    post: 
+      tags: 
+        - users   
+      summary: Create new user
+      operationId: Register
+      
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      
+      security: []
+      requestBody:
+        required: true 
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/UserAuthRequest"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /user/login:
+    post: 
+      tags: 
+        - users   
+      summary: Login user
+      operationId: Login
+      
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      requestBody:
+        required: true 
+        content: 
+          application/json:
+            schema: 
+              $ref: "#/components/schemas/UserAuthRequest"
+      
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound" 
+          
+  /user/me:
+    get: 
+      tags: 
+        - users
+      summary: Get current user
+      operationId: GetMe
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  
+# SERVICE       
+  /health:
+    get:
+      operationId: Health
+      summary: Health check
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      tags: 
+        - service
+      security: []
+      responses: 
+        "200": 
+          description: Success
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest" 
+      
+      # deprecated: false
+      # x-42c-no-authentication: false
+      # x-42c-mtls: false
+      # x-42c-sensitivity: 3
+      # x-42c-weight-input: 20
+      # x-42c-weight-output: 20
+      # x-42c-weight-parameters: 50
+      # x-42c-weight-requestBody: 50
+
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  parameters:
+    XRequestID:
+      name: X-Request-ID
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Correlation ID for tracing
+  
+  schemas:
+    
+    ULID:
+      type: string
+      minLength: 26
+      maxLength: 26
+
+      # пример значения — будет отображаться в Swagger UI
+      example: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+
+      # кастомные свойства для генератора Go-кода
+      x-go-type: ulid.ULID
+      x-go-type-import:
+        path: github.com/oklog/ulid/v2
+
+    WithId:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          $ref: "#/components/schemas/ULID"
+    
+    Game:
+      type: object
+      required: 
+        - id
+        - mode
+        - rated
+        - ended
+        - whiteUserId
+        - blackUserId
+      properties: 
+        id: 
+          $ref: "#/components/schemas/ULID" 
+        mode:
+          type: string
+          enum: [blitz, rapid, classical]
+          x-enum-varnames: [BLITZ, RAPID, CLASSICAL]
+        rated:
+          type: boolean
+        ended:
+          type: boolean
+        endedBy:
+          type: string
+          enum: ['mate', 'resignation', 'draw', 'timeout']
+          x-enum-varnames: [MATE, RESIGNATION, DRAW, TIMEOUT]
+        winner:
+          type: string
+          enum: ['white', 'black', 'draw']
+          x-enum-varnames: [WHITE, BLACK, DRAW]
+        whiteUserId:
+          $ref: "#/components/schemas/ULID"
+        blackUserId:
+          $ref: "#/components/schemas/ULID"
+        timeframe: 
+          type: integer
+          enum: [1, 3, 5, 10, 30]
+
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+    
+    GameHistory:
+      type: object
+      required:
+        - games
+        - total
+      properties:
+        games:
+          type: array
+          items:
+            $ref: "#/components/schemas/Game"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    
+    NewGameRequest:
+      type: object
+      required:
+        - mode
+        - rated
+      properties:
+        mode:
+          type: string
+          enum: [blitz, rapid, classical]
+          x-enum-varnames: [BLITZ, RAPID, CLASSICAL]
+        rated:
+          type: boolean
+        opponentId:
+          $ref: "#/components/schemas/ULID"
+
+    ResignGameRequest:
+      type: object
+      required: 
+        - gameId
+      properties: 
+        gameId: 
+          $ref: "#/components/schemas/ULID"
+        
+    DrawGameRequest:
+      type: object
+      required: 
+        - gameId
+        - action
+      properties: 
+        gameId: 
+          $ref: "#/components/schemas/ULID"
+        action:
+          type: string
+          enum: ['offer', 'accept', 'decline']
+          x-enum-varnames: [OFFER, ACCEPT, DECLINE]
+
+    EndGameRequest:
+      type: object
+      required: 
+        - gameId
+        - endedBy
+        - winner
+      properties: 
+        gameId: 
+          $ref: "#/components/schemas/ULID"
+        endedBy:
+          type: string
+          enum: ['mate', 'resignation', 'draw', 'timeout']
+          x-enum-varnames: [MATE, RESIGNATION, DRAW, TIMEOUT]
+        winner:
+          type: string
+          enum: ['white', 'black', 'draw']
+          x-enum-varnames: [WHITE, BLACK, DRAW]
+    
+    MoveRequest:
+      type: object
+      required: 
+        - gameId
+        - from
+        - to
+      properties: 
+        gameId:
+          $ref: "#/components/schemas/ULID"
+        from:
+          type: string
+          pattern: "^[a-h][1-8]$"
+          example: "e2"
+        to:
+          type: string
+          pattern: "^[a-h][1-8]$"
+          example: "e4"
+        promotion:
+          type: string
+    
+    Move:
+      allOf: 
+        - $ref: "#/components/schemas/WithId"
+        - $ref: "#/components/schemas/MoveRequest"
+
+    MoveHistory:
+      type: object
+      required: 
+        - gameId
+        - moves
+      properties: 
+        gameId:
+          $ref: "#/components/schemas/ULID"
+        moves:
+          type: array
+          items: 
+            $ref: "#/components/schemas/Move"
+
+    Board:
+      type: object
+      required: 
+        - gameId
+        - moveCount
+        - fen
+      properties: 
+        gameId: 
+          $ref: "#/components/schemas/ULID"
+        moveCount:
+          type: integer
+        fen:
+          type: string
+          example: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+    LegalMovesList:
+      type: object
+      required: 
+        - moves
+      properties: 
+        moves: 
+          type: array
+          items: 
+            $ref: "#/components/schemas/MoveRequest"
+      
+    UserAuthRequest:
+      type: object
+      required: 
+        - username
+        - password
+      properties: 
+        username:
+          type: string
+        password:
+          type: string
+    
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        tokenType:
+          type: string
+          description: Token type for Authorization header
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Token valid in seconds
+          example: 3600
+      required:
+        - accessToken
+        - tokenType
+
+    User:
+      type: object
+      required: 
+        - id
+        - username
+        - rating
+        - createdAt
+      properties: 
+        id: 
+          $ref: "#/components/schemas/ULID"
+        username:
+          type: string
+        rating:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+    
+    OkResponse:
+      type: object
+      required: 
+        - ok
+      properties: 
+        ok: 
+          type: boolean
+
+    ScoreRequest:
+      type: object
+      required: 
+        - fen
+      properties: 
+        fen:
+          type: string
+      
+    ScoreResponse:
+      type: object
+      required: 
+        -  score
+      properties:
+        score:
+          type: number
+          
+
+    ErrorNotFound:
+      type: object
+      properties: 
+        statusCode: 
+          type: integer
+          default: 404
+        errorMessage: 
+          type: string
+          default: "The requested item not found"
+      
+    ErrorBadRequest:
+      type: object
+      properties: 
+        statusCode: 
+          type: integer
+          default: 400
+        errorMessage: 
+          type: string
+          default: "Bad request"
+    
+    ErrorUnauthorized:
+      type: object
+      properties: 
+        statusCode: 
+          type: integer
+          default: 401
+        errorMessage: 
+          type: string
+          default: "Unauthorized"
+    
+    ErrorForbidden:
+      type: object
+      properties: 
+        statusCode: 
+          type: integer
+          default: 403
+        errorMessage: 
+          type: string
+          default: "Forbidden"
+
+    
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBadRequest"
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorNotFound"
+    
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorForbidden"
+          
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorUnauthorized"
+
+security:
+  - BearerAuth: [] 
+
+tags: 
+  - name: game 
+    description: Manage chess game
+  - name: board
+    description: Manage board states
+  - name: users
+    description: Manage users profile info
+  - name: service
+    description: Service API endpoints 
