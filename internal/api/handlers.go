@@ -51,3 +51,21 @@ func (s *Server) GameCreate(w http.ResponseWriter, r *http.Request, params GameC
 	// 4. Отправить ответ
 	writeJSON(w, http.StatusCreated, game)
 }
+
+func (s *Server) Health(w http.ResponseWriter, r *http.Request, params HealthParams) {
+	var body HealthParams
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		code := 400
+		msg := "invalid JSON body"
+		writeJSON(w, http.StatusBadRequest, ErrorBadRequest{
+			StatusCode:   &code,
+			ErrorMessage: &msg,
+		})
+		return
+	}
+
+	ok := OkResponse{
+		Ok: true,
+	}
+	writeJSON(w, http.StatusCreated, ok)
+}

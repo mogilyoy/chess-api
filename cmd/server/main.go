@@ -17,7 +17,9 @@ func main() {
 	r := chi.NewRouter()
 
 	// Регистрируем сгенерированные хэндлеры
-	api.RegisterHandlers(r, serverImpl)
+	api.HandlerWithOptions(serverImpl, api.ChiServerOptions{
+		BaseURL: "",
+	})
 
 	addr := ":8080"
 	log.Printf("Starting server on %s", addr)
